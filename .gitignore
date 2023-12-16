@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 /PasswordManager.code-workspace
 /password_manager_venv
+/config.yaml
+/test.py
+/*.db
+/.vscode
