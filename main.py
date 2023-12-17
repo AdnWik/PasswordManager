@@ -1,3 +1,4 @@
+from os import path
 import yaml
 from sqlalchemy import (
     create_engine,
@@ -23,25 +24,31 @@ def load_config(filename) -> dict:
     return data
 
 
+def create_database(data):
+    engine = create_engine('sqlite:///' + data['sqlalchemy']['database_name'],
+                           echo=data['sqlalchemy']['echo'],
+                           future=data['sqlalchemy']['future']
+                           )
+    meta = MetaData()
+
+    services = Table(
+        'services', meta,
+        Column('id', Integer, primary_key=True),
+        Column('service_name', String)
+    )
+
+    credentials = Table(
+        'credentials', meta,
+        Column('id', Integer, primary_key=True),
+        Column('service_id', Integer),
+        Column('login', String),
+        Column('password', String)
+    )
+
+    meta.create_all(engine)
+
+
+# MAIN PROGRAM
 config = load_config('config.yaml')
-engine = create_engine('sqlite:///' + config['sqlalchemy']['database_name'],
-                       echo=config['sqlalchemy']['echo'],
-                       future=config['sqlalchemy']['future']
-                       )
-meta = MetaData()
-
-services = Table(
-    'services', meta,
-    Column('id', Integer, primary_key=True),
-    Column('service_name', String)
-)
-
-credentials = Table(
-    'credentials', meta,
-    Column('id', Integer, primary_key=True),
-    Column('service_id', Integer),
-    Column('login', String),
-    Column('password', String)
-)
-
-meta.create_all(engine)
+if not path.exists(config['sqlalchemy']['database_name']):
+    create_database(config)
