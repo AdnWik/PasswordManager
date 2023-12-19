@@ -6,8 +6,29 @@ from sqlalchemy import (
     Column,
     Integer,
     String,
-    MetaData
+    MetaData,
+    ForeignKey,
     )
+from sqlalchemy.orm import declarative_base, relationship, Session, backref
+from menu import show_menu
+
+
+Base = declarative_base()
+
+
+class Service(Base):
+    __tablename__ = 'services'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(30))
+
+
+class Credential(Base):
+    __tablename__ = 'credentials'
+    id = Column(Integer, primary_key=True)
+    service_id = Column(Integer, ForeignKey('services.id'))
+    service = relationship('Service', backref=backref('services', uselist=False))
+    login = Column(String(50))
+    password = Column(String(100))
 
 
 def load_config(filename) -> dict:
@@ -34,7 +55,7 @@ def create_database(data):
     services = Table(
         'services', meta,
         Column('id', Integer, primary_key=True),
-        Column('service_name', String)
+        Column('name', String, unique=True)
     )
 
     credentials = Table(
@@ -50,5 +71,113 @@ def create_database(data):
 
 # MAIN PROGRAM
 config = load_config('config.yaml')
+
 if not path.exists(config['sqlalchemy']['database_name']):
     create_database(config)
+
+engine = create_engine("sqlite:///" + config['sqlalchemy']['database_name'], echo=False, future=True)
+
+while True:
+    options = ['show', 'add']
+    start_message = 'PASSWORD MANAGER'
+    end_message = '='*100
+    print(show_menu(menu_options=options, start_message=start_message, end_message=end_message))
+    user_choice = input('>>> ')
+
+    if user_choice == '1':
+        # SHOW
+        options = ['all', 'specific']
+        submenu = 'show'
+        print(show_menu(menu_options=options, submenu_name=submenu))
+        user_choice = input('>>> ')
+
+        if user_choice == '1':
+            # ALL
+            with Session(engine) as session:
+                services = session.query(Service).all()
+                for service in services:
+                    print(service.name)
+        elif user_choice == '2':
+            # SPECIFIC
+            pass
+
+        else:
+            pass
+
+    elif user_choice == '2':
+        # ADD
+        options = ['service', 'credential']
+        submenu = 'add'
+        print(show_menu(menu_options=options, submenu_name=submenu))
+        user_choice = input('>>> ')
+
+        if user_choice == '1':
+            # SERVICE
+            new_service = input('>>> ')
+            try:
+                with Session(engine) as session:
+                    #services = session.query(Service).filter(Service.name == new_service)
+                    #for service in services:
+                    #   print(service.name)
+
+                    service = Service(name=new_service)
+                    session.add(service)
+                    session.commit()
+
+            except Exception:
+                pass
+
+            print(f'Create {new_service} -> OK')
+
+
+
+        elif user_choice == '2':
+            # CREDENTIAL
+            pass
+
+        else:
+            pass
+
+    else:
+        # EXIT
+        break
+
+
+
+'''
+    print('='*100)
+    print('PASSWORD MANAGER\n')
+    options = ['Add service', 'Add credential to service']
+    for no, option in enumerate(options, 1):
+        print(f'{no} - {option}')
+    print('\n0 - EXIT\n')
+
+    user_choice = int(input('>>> '))
+    if user_choice == 1:
+        # ADD NEW SERVICE
+        print('Enter service name: ')
+        new_service = input('>>> ')
+
+        try:
+            with Session(engine) as session:
+                #services = session.query(Service).filter(Service.name == new_service)
+                #for service in services:
+                 #   print(service.name)
+
+                service = Service(name=new_service)
+                session.add(service)
+                session.commit()
+
+        except Exception:
+            pass
+
+        print(f'Create {new_service} -> OK')
+
+    elif user_choice == 2:
+        # ADD CREDENTIAL TO SERVICE
+        pass
+
+    else:
+        # EXIT
+        break
+'''
