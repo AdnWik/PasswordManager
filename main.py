@@ -10,7 +10,7 @@ from sqlalchemy import (
     ForeignKey,
     )
 from sqlalchemy.orm import declarative_base, relationship, Session, backref
-from menu import show_menu
+from menu import create_menu
 
 
 Base = declarative_base()
@@ -80,25 +80,26 @@ engine = create_engine("sqlite:///" + config['sqlalchemy']['database_name'], ech
 while True:
     options = ['show', 'add']
     start_message = 'PASSWORD MANAGER'
-    end_message = '='*100
-    print(show_menu(menu_options=options, start_message=start_message, end_message=end_message))
+    print(create_menu(menu_options=options, start_message=start_message))
     user_choice = input('>>> ')
 
     if user_choice == '1':
         # SHOW
         options = ['all', 'specific']
         submenu = 'show'
-        print(show_menu(menu_options=options, submenu_name=submenu))
+        print(create_menu(menu_options=options, submenu_name=submenu))
         user_choice = input('>>> ')
 
         if user_choice == '1':
-            # ALL
+            # SHOW - ALL
             with Session(engine) as session:
                 services = session.query(Service).all()
+                print('\n' + 'result'.upper().center(100, '-'))
                 for service in services:
-                    print(service.name)
+                    print(f'Service: {service.name}')
+
         elif user_choice == '2':
-            # SPECIFIC
+            # SHOW - SPECIFIC
             pass
 
         else:
@@ -108,11 +109,11 @@ while True:
         # ADD
         options = ['service', 'credential']
         submenu = 'add'
-        print(show_menu(menu_options=options, submenu_name=submenu))
+        print(create_menu(menu_options=options, submenu_name=submenu))
         user_choice = input('>>> ')
 
         if user_choice == '1':
-            # SERVICE
+            # ADD - SERVICE
             new_service = input('>>> ')
             try:
                 with Session(engine) as session:
@@ -127,12 +128,10 @@ while True:
             except Exception:
                 pass
 
-            print(f'Create {new_service} -> OK')
-
-
+            print(f'\nCreate service "{new_service}" -> OK')
 
         elif user_choice == '2':
-            # CREDENTIAL
+            # ADD - CREDENTIAL
             pass
 
         else:

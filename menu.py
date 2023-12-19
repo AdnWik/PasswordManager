@@ -1,7 +1,7 @@
 """Menu function"""
 
 
-def show_menu(menu_options: list,
+def create_menu(menu_options: list,
               submenu_name='',
               start_message='',
               end_message=''
@@ -18,10 +18,11 @@ def show_menu(menu_options: list,
     Returns:
         str: _description_
     """
+    result = f'{'='*100}{'\n'}'
     if submenu_name:
-        result = submenu_name.upper().center(50, '-') + '\n'
+        result += submenu_name.upper().center(100, '-') + '\n'
     else:
-        result = ''
+        result += ''
 
     if start_message:
         result += start_message + '\n\n'
