@@ -1,5 +1,6 @@
 from os import path
 import yaml
+import logging
 from sqlalchemy import (
     create_engine,
     Table,
@@ -11,24 +12,11 @@ from sqlalchemy import (
     )
 from sqlalchemy.orm import declarative_base, relationship, Session, backref
 from menu import create_menu
+from database import create_database, Service, Credential
 
 
-Base = declarative_base()
-
-
-class Service(Base):
-    __tablename__ = 'services'
-    id = Column(Integer, primary_key=True)
-    name = Column(String(30))
-
-
-class Credential(Base):
-    __tablename__ = 'credentials'
-    id = Column(Integer, primary_key=True)
-    service_id = Column(Integer, ForeignKey('services.id'))
-    service = relationship('Service', backref=backref('services', uselist=False))
-    login = Column(String(50))
-    password = Column(String(100))
+class ServiceExists(Exception):
+    """ERROR - Service name already exists"""
 
 
 def load_config(filename) -> dict:
@@ -45,32 +33,9 @@ def load_config(filename) -> dict:
     return data
 
 
-def create_database(data):
-    engine = create_engine('sqlite:///' + data['sqlalchemy']['database_name'],
-                           echo=data['sqlalchemy']['echo'],
-                           future=data['sqlalchemy']['future']
-                           )
-    meta = MetaData()
-
-    services = Table(
-        'services', meta,
-        Column('id', Integer, primary_key=True),
-        Column('name', String, unique=True)
-    )
-
-    credentials = Table(
-        'credentials', meta,
-        Column('id', Integer, primary_key=True),
-        Column('service_id', Integer),
-        Column('login', String),
-        Column('password', String)
-    )
-
-    meta.create_all(engine)
-
-
 # MAIN PROGRAM
 config = load_config('config.yaml')
+logging.basicConfig(level=logging.DEBUG)
 
 if not path.exists(config['sqlalchemy']['database_name']):
     create_database(config)
@@ -114,21 +79,23 @@ while True:
 
         if user_choice == '1':
             # ADD - SERVICE
+            print('Enter new service name')
             new_service = input('>>> ')
             try:
                 with Session(engine) as session:
-                    #services = session.query(Service).filter(Service.name == new_service)
-                    #for service in services:
-                    #   print(service.name)
+                    matching_services = list(session.query(Service).filter(Service.name == new_service))
+
+                    if matching_services:
+                        raise ServiceExists
 
                     service = Service(name=new_service)
                     session.add(service)
                     session.commit()
+                    logging.info('Create service: %s -> OK', new_service)
+                    print(f'\nCreate service: {new_service} -> OK')
 
-            except Exception:
-                pass
-
-            print(f'\nCreate service "{new_service}" -> OK')
+            except ServiceExists:
+                logging.error('%s ALREADY EXISTS', new_service)
 
         elif user_choice == '2':
             # ADD - CREDENTIAL
@@ -140,43 +107,3 @@ while True:
     else:
         # EXIT
         break
-
-
-
-'''
-    print('='*100)
-    print('PASSWORD MANAGER\n')
-    options = ['Add service', 'Add credential to service']
-    for no, option in enumerate(options, 1):
-        print(f'{no} - {option}')
-    print('\n0 - EXIT\n')
-
-    user_choice = int(input('>>> '))
-    if user_choice == 1:
-        # ADD NEW SERVICE
-        print('Enter service name: ')
-        new_service = input('>>> ')
-
-        try:
-            with Session(engine) as session:
-                #services = session.query(Service).filter(Service.name == new_service)
-                #for service in services:
-                 #   print(service.name)
-
-                service = Service(name=new_service)
-                session.add(service)
-                session.commit()
-
-        except Exception:
-            pass
-
-        print(f'Create {new_service} -> OK')
-
-    elif user_choice == 2:
-        # ADD CREDENTIAL TO SERVICE
-        pass
-
-    else:
-        # EXIT
-        break
-'''
