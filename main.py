@@ -12,7 +12,7 @@ from sqlalchemy import (
     )
 from sqlalchemy.orm import declarative_base, relationship, Session, backref
 from menu import create_menu
-from database import create_database, Service, Credential
+from database import Database, Service, Credential
 
 
 class ServiceExists(Exception):
@@ -37,34 +37,41 @@ def load_config(filename) -> dict:
 config = load_config('config.yaml')
 logging.basicConfig(level=logging.DEBUG)
 
-if not path.exists(config['sqlalchemy']['database_name']):
-    create_database(config)
-
-engine = create_engine("sqlite:///" + config['sqlalchemy']['database_name'], echo=False, future=True)
+database = Database(config)
 
 while True:
-    options = ['show', 'add']
+    options = ['show', 'add', 'delete']
     start_message = 'PASSWORD MANAGER'
     print(create_menu(menu_options=options, start_message=start_message))
     user_choice = input('>>> ')
 
     if user_choice == '1':
         # SHOW
-        options = ['all', 'specific']
+        options = ['all credentials', 'specific credential', 'all services', 'specific service']
         submenu = 'show'
         print(create_menu(menu_options=options, submenu_name=submenu))
         user_choice = input('>>> ')
 
         if user_choice == '1':
-            # SHOW - ALL
-            with Session(engine) as session:
-                services = session.query(Service).all()
-                print('\n' + 'result'.upper().center(100, '-'))
-                for service in services:
-                    print(f'Service: {service.name}')
+            # TODO:
+            # SHOW - ALL CREDENTIALS
+            pass
 
         elif user_choice == '2':
-            # SHOW - SPECIFIC
+            # TODO:
+            # SHOW - SPECIFIC CREDENTIAL
+            pass
+
+        elif user_choice == '3':
+            # SHOW - ALL SERVICES
+            all_services = database.load_all_services()
+            print('\n' + 'result'.upper().center(100, '-'))
+            for service in all_services:
+                print(f'Service: {service.name}')
+
+        elif user_choice == '4':
+            # TODO:
+            # SHOW - SPECIFIC SERVICE
             pass
 
         else:
@@ -82,15 +89,10 @@ while True:
             print('Enter new service name')
             new_service = input('>>> ')
             try:
-                with Session(engine) as session:
-                    matching_services = list(session.query(Service).filter(Service.name == new_service))
+                if database.check_service_exists(new_service):
+                    raise ServiceExists
 
-                    if matching_services:
-                        raise ServiceExists
-
-                    service = Service(name=new_service)
-                    session.add(service)
-                    session.commit()
+                if database.add_service(new_service):
                     logging.info('Create service: %s -> OK', new_service)
                     print(f'\nCreate service: {new_service} -> OK')
 
@@ -99,10 +101,15 @@ while True:
 
         elif user_choice == '2':
             # ADD - CREDENTIAL
-            pass
+            if database.add_credential_to_service():
+                logging.info('Create credential -> OK')
+            else:
+                logging.info('Create credential -> NOK')
 
-        else:
-            pass
+    elif user_choice == '3':
+        # TODO:
+        # DELETE
+        pass
 
     else:
         # EXIT

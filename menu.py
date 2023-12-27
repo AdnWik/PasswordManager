@@ -18,7 +18,7 @@ def create_menu(menu_options: list,
     Returns:
         str: _description_
     """
-    result = f'{'='*100}{'\n'}'
+    result = f'{"="*100}\n'
     if submenu_name:
         result += submenu_name.upper().center(100, '-') + '\n'
     else:
