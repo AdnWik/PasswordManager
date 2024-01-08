@@ -7,6 +7,7 @@ from sqlalchemy import (
     String,
     MetaData,
     ForeignKey,
+    select
     )
 from sqlalchemy.orm import declarative_base, relationship, Session, backref
 
@@ -73,6 +74,15 @@ class Database:
 
         return all_services
 
+    def load_all_credentials(self):
+        try:
+            with Session(self.database_engine) as session:
+                all_credentials = session.query(Credential).all()
+        except Exception:
+            pass
+
+        return all_credentials
+
     def check_service_exists(self, service_to_find: str):
         try:
             with Session(self.database_engine) as session:
@@ -114,3 +124,19 @@ class Database:
                 return True
         except Exception:
             return False
+
+    def show_all_services(self):
+        pass
+
+    def show_all_credentials(self):
+        all_credentials = None
+        try:
+            with Session(self.database_engine) as session:
+                stmt = select(Credential)
+                all_credentials = session.scalars(stmt).all()
+                #all_credentials = session.query(Credential).all()
+
+                return all_credentials
+
+        except Exception as error:
+            return error

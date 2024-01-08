@@ -33,29 +33,37 @@ def load_config(filename) -> dict:
     return data
 
 
+def collect_data_from_user():
+    data = input('>>> ')
+    return data
+
+
 # MAIN PROGRAM
-config = load_config('config.yaml')
+CONFIG = load_config('config.yaml')
 logging.basicConfig(level=logging.DEBUG)
 
-database = Database(config)
+database = Database(CONFIG)
 
 while True:
     options = ['show', 'add', 'delete']
     start_message = 'PASSWORD MANAGER'
     print(create_menu(menu_options=options, start_message=start_message))
-    user_choice = input('>>> ')
+    user_choice = collect_data_from_user()
 
     if user_choice == '1':
         # SHOW
         options = ['all credentials', 'specific credential', 'all services', 'specific service']
         submenu = 'show'
         print(create_menu(menu_options=options, submenu_name=submenu))
-        user_choice = input('>>> ')
+        user_choice = collect_data_from_user()
 
         if user_choice == '1':
             # TODO:
             # SHOW - ALL CREDENTIALS
-            pass
+            all_credentials = database.show_all_credentials()
+            for credential in all_credentials:
+                print(f'ID: {credential.id} LOGIN: {credential.login} PASSWORD: {credential.password}')
+                #print(credential)
 
         elif user_choice == '2':
             # TODO:
@@ -87,7 +95,7 @@ while True:
         if user_choice == '1':
             # ADD - SERVICE
             print('Enter new service name')
-            new_service = input('>>> ')
+            new_service = collect_data_from_user()
             try:
                 if database.check_service_exists(new_service):
                     raise ServiceExists
